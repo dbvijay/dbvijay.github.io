@@ -46,7 +46,7 @@ const onSessionEnded = () => {
 const arButton = new ARButton(renderer, { sessionInit: { optionalFeatures: ['dom-overlay'], domOverlay: { root: document.body } } });
 arButton.addEventListener('sessionstart', onSessionStarted);
 const textureLoader = new THREE.TextureLoader();
-const imageTexture = textureLoader.load('marker.png');
+const imageTexture = textureLoader.load('./marker.png');
 const imageSource = new XRImageTrackingSource(xrSession, imageTexture);
 xrRefSpace = xrSession.isImmersive ? xrSession.immersiveReferenceSpace : xrSession.requestReferenceSpace('viewer');
 xrRefSpace = ARUtils.filterReferenceSpaceOfType(xrRefSpace, 'stationary');
