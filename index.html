@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 	<head>
 		<title>Geometry</title>
@@ -33,3 +33,74 @@
 	</body>
 </html>
 
+ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+    const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+if ('xr' in navigator) {
+    navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
+      if (supported) {
+        const sessionInit = { optionalFeatures: ['dom-overlay'], domOverlay: { root: document.body } };
+        navigator.xr.requestSession('immersive-ar', sessionInit).then((session) => {
+          // AR session is started, continue with the next steps
+        });
+      }
+    });
+  }
+  let xrSession, xrRefSpace;
+const onSessionStarted = (session) => {
+  xrSession = session;
+  session.addEventListener('end', onSessionEnded);
+  // Get a reference space for tracking
+  session.requestReferenceSpace('local').then((refSpace) => {
+    xrRefSpace = refSpace;
+    // Create your scene content and add it to the Three.js scene
+    setupSceneContent();
+    // Start rendering the AR scene
+    session.requestAnimationFrame(onXRFrame);
+  });
+};
+const onSessionEnded = () => {
+  xrSession = null;
+  xrRefSpace = null;
+  // Clean up and handle session end
+};
+const arButton = new ARButton(renderer, { sessionInit: { optionalFeatures: ['dom-overlay'], domOverlay: { root: document.body } } });
+arButton.addEventListener('sessionstart', onSessionStarted);
+const textureLoader = new THREE.TextureLoader();
+const imageTexture = textureLoader.load('marker.png');
+const imageSource = new XRImageTrackingSource(xrSession, imageTexture);
+xrRefSpace = xrSession.isImmersive ? xrSession.immersiveReferenceSpace : xrSession.requestReferenceSpace('viewer');
+xrRefSpace = ARUtils.filterReferenceSpaceOfType(xrRefSpace, 'stationary');
+xrRefSpace = ARUtils.filterReferenceSpaceUsingPredicate(xrRefSpace, (refSpace) => refSpace instanceof XRBoundedReferenceSpace);
+xrRefSpace.imageTracker = imageSource;
+const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+const cubeMaterial = new THREE.MeshNormalMaterial();
+const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+scene.add(cube);
+const onXRFrame = (time, frame) => {
+    const pose = frame.getPose(xrRefSpace);
+    if (pose) {
+      const matrix = new THREE.Matrix4();
+      matrix.fromArray(pose.transform.matrix);
+      cube.matrix.copy(matrix);
+      cube.matrix.decompose(cube.position, cube.rotation, cube.scale);
+    }
+    renderer.render(scene, camera);
+    xrSession.requestAnimationFrame(onXRFrame);
+  };
+</script>
+</body>
+</html>
+ 
